@@ -7,13 +7,8 @@ import os
 st.set_page_config(layout="wide")
 
 thu_map = {
-    0: "Thứ hai",
-    1: "Thứ ba",
-    2: "Thứ tư",
-    3: "Thứ năm",
-    4: "Thứ sáu",
-    5: "Thứ bảy",
-    6: "Chủ nhật"
+    0: "Thứ hai", 1: "Thứ ba", 2: "Thứ tư", 3: "Thứ năm",
+    4: "Thứ sáu", 5: "Thứ bảy", 6: "Chủ nhật"
 }
 
 menu = [
@@ -27,8 +22,8 @@ menu = [
 ]
 
 df_menu = pd.DataFrame(menu)
-
 excel_file = "don_hang.xlsx"
+
 if os.path.exists(excel_file):
     orders = pd.read_excel(excel_file)
 else:
@@ -37,25 +32,26 @@ else:
 if "orders" not in st.session_state:
     st.session_state.orders = orders
 
-st.title("INMINH CAFÉ ☕ - QUẢN LÍ DOANH THU")
+st.title("INMINH CAFÉ ☕ - QUẢN LÍ DOANH THU (BẢN CHUẨN CUỐI)")
 
 with st.form("order_form"):
     col1, col2 = st.columns(2)
     with col1:
-        ten_khach = st.text_input("Tên khách hàng", key="ten_khach")
-        ngay_mua = st.date_input("Ngày mua", key="ngay_mua")
+        ten_khach = st.text_input("Tên khách hàng", value=st.session_state.get("ten_khach", ""), key="ten_khach")
+        ngay_mua = st.date_input("Ngày mua", value=st.session_state.get("ngay_mua", datetime.today().date()), key="ngay_mua")
     with col2:
-        gio_mua = st.time_input("Giờ mua", value=time(8, 0), step=60, key="gio_mua")
+        gio_mua = st.time_input("Giờ mua", value=st.session_state.get("gio_mua", time(8, 0)), key="gio_mua")
 
     thoi_gian = datetime.combine(ngay_mua, gio_mua)
     thu = thu_map[thoi_gian.weekday()]
     thoi_gian_str = f"{thu}, {thoi_gian.strftime('%d/%m/%Y %H:%M')}"
 
-    loai_nuoc = st.selectbox("Loại nước", df_menu["Loại nước"].unique(), key="loai_nuoc")
-    size = st.selectbox("Size", df_menu[df_menu["Loại nước"] == loai_nuoc]["Size"].unique(), key="size")
+    loai_nuoc = st.selectbox("Loại nước", df_menu["Loại nước"].unique(), index=0, key="loai_nuoc")
+    size = st.selectbox("Size", df_menu[df_menu["Loại nước"] == loai_nuoc]["Size"].unique(), index=0, key="size")
     so_luong = st.number_input("Số lượng", min_value=1, value=1, key="so_luong")
 
     submit = st.form_submit_button("➕ Thêm đơn hàng")
+
     if submit and ten_khach:
         row = df_menu[(df_menu["Loại nước"] == loai_nuoc) & (df_menu["Size"] == size)].iloc[0]
         doanh_thu = row["Giá bán"] * so_luong
@@ -75,18 +71,19 @@ with st.form("order_form"):
         st.session_state.orders = pd.concat([st.session_state.orders, new_order], ignore_index=True)
         st.session_state.orders.to_excel(excel_file, index=False)
 
+        # RESET FORM
         for key in ["ten_khach", "ngay_mua", "gio_mua", "loai_nuoc", "size", "so_luong"]:
             if key in st.session_state:
                 del st.session_state[key]
 
-        st.success("✅ Đã thêm và lưu vào Excel!")
+        st.success("✅ Đã thêm đơn hàng và reset form!")
         st.rerun()
 
-# --- LỊCH SỬ ---
+# --- BẢNG LỊCH SỬ ---
 st.subheader("📦 Lịch sử đơn hàng")
 st.dataframe(st.session_state.orders, use_container_width=True)
 
-# --- TẢI EXCEL ---
+# --- TẢI FILE EXCEL ---
 st.subheader("⬇️ Tải đơn hàng Excel")
 if os.path.exists(excel_file):
     with open(excel_file, "rb") as f:
@@ -110,7 +107,7 @@ if not df.empty:
     ax1.axis("equal")
     st.pyplot(fig1)
 
-# --- XOÁ ---
+# --- XOÁ ĐƠN ---
 st.subheader("🗑 Xóa đơn hàng sai")
 if not df.empty:
     for idx, row in df.iterrows():
@@ -122,5 +119,5 @@ if not df.empty:
                 st.session_state.orders.drop(index=idx, inplace=True)
                 st.session_state.orders.reset_index(drop=True, inplace=True)
                 st.session_state.orders.to_excel(excel_file, index=False)
-                st.success("✅ Đã xóa và cập nhật Excel.")
+                st.success("✅ Đã xóa đơn và cập nhật Excel.")
                 st.rerun()
