@@ -94,3 +94,18 @@ if not df.empty:
     ax1.pie(pie, labels=pie.index, autopct='%1.1f%%', startangle=90)
     ax1.axis('equal')
     st.pyplot(fig1)
+    # --- XÓA ĐƠN HÀNG ---
+st.subheader("🗑 Xóa đơn hàng sai")
+
+if not st.session_state.orders.empty:
+    for idx, row in st.session_state.orders.iterrows():
+        col1, col2 = st.columns([6, 1])
+        with col1:
+            st.write(f"{idx+1}. {row['Khách']} - {row['Món']} {row['Size']} ({row['Số lượng']} ly) - {row['Thời gian']}")
+        with col2:
+            if st.button("🗑 Xóa", key=f"delete_{idx}"):
+                st.session_state.orders.drop(index=idx, inplace=True)
+                st.session_state.orders.reset_index(drop=True, inplace=True)
+                st.success("✅ Đã xóa đơn hàng.")
+                st.rerun()
+
