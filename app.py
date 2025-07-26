@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, time
+import datetime
+from datetime import datetime as dt, time
 import matplotlib.pyplot as plt
 import os
 
@@ -32,17 +33,22 @@ else:
 if "orders" not in st.session_state:
     st.session_state.orders = orders
 
-st.title("INMINH CAFÉ ☕ - QUẢN LÍ DOANH THU (BẢN CHUẨN CUỐI)")
+st.title("INMINH CAFÉ ☕ - QUẢN LÍ DOANH THU")
 
 with st.form("order_form"):
     col1, col2 = st.columns(2)
     with col1:
         ten_khach = st.text_input("Tên khách hàng", value=st.session_state.get("ten_khach", ""), key="ten_khach")
-        ngay_mua = st.date_input("Ngày mua", value=st.session_state.get("ngay_mua", datetime.today().date()), key="ngay_mua")
+        ngay_mua = st.date_input("Ngày mua", value=st.session_state.get("ngay_mua", dt.today().date()), key="ngay_mua")
     with col2:
-        gio_mua = st.time_input("Giờ mua", value=st.session_state.get("gio_mua", time(8, 0)), key="gio_mua")
+        gio_mua = st.time_input(
+            "Giờ mua",
+            value=st.session_state.get("gio_mua", time(8, 0)),
+            step=datetime.timedelta(minutes=1),
+            key="gio_mua"
+        )
 
-    thoi_gian = datetime.combine(ngay_mua, gio_mua)
+    thoi_gian = dt.combine(ngay_mua, gio_mua)
     thu = thu_map[thoi_gian.weekday()]
     thoi_gian_str = f"{thu}, {thoi_gian.strftime('%d/%m/%Y %H:%M')}"
 
@@ -71,12 +77,11 @@ with st.form("order_form"):
         st.session_state.orders = pd.concat([st.session_state.orders, new_order], ignore_index=True)
         st.session_state.orders.to_excel(excel_file, index=False)
 
-        # RESET FORM
         for key in ["ten_khach", "ngay_mua", "gio_mua", "loai_nuoc", "size", "so_luong"]:
             if key in st.session_state:
                 del st.session_state[key]
 
-        st.success("✅ Đã thêm đơn hàng và reset form!")
+        st.success("✅ Đã thêm đơn và reset form!")
         st.rerun()
 
 # --- BẢNG LỊCH SỬ ---
