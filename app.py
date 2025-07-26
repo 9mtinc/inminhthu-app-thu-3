@@ -37,7 +37,7 @@ else:
 if "orders" not in st.session_state:
     st.session_state.orders = orders
 
-st.title("INMINH CAFÉ ☕ - QUẢN LÍ DOANH THU (Excel Only)")
+st.title("INMINH CAFÉ ☕ - QUẢN LÍ DOANH THU")
 
 with st.form("order_form"):
     col1, col2 = st.columns(2)
