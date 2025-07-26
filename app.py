@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, time
 import matplotlib.pyplot as plt
+import os
 
-# Giao diện full màn hình
 st.set_page_config(layout="wide")
 
-# Bản đồ thứ tiếng Việt
 thu_map = {
     0: "Thứ hai",
     1: "Thứ ba",
@@ -17,7 +16,6 @@ thu_map = {
     6: "Chủ nhật"
 }
 
-# Menu đồ uống
 menu = [
     {"Loại nước": "Bạc xỉu", "Size": "500ml", "Giá bán": 17000, "Chi phí": 5177},
     {"Loại nước": "Cà phê muối", "Size": "500ml", "Giá bán": 16000, "Chi phí": 1722},
@@ -30,15 +28,18 @@ menu = [
 
 df_menu = pd.DataFrame(menu)
 
-# Lưu đơn hàng
+# Load file Excel nếu có
+excel_file = "don_hang.xlsx"
+if os.path.exists(excel_file):
+    orders = pd.read_excel(excel_file)
+else:
+    orders = pd.DataFrame(columns=["Khách", "Thời gian", "Món", "Size", "Số lượng", "Doanh thu", "Chi phí", "Lợi nhuận"])
+
 if "orders" not in st.session_state:
-    st.session_state.orders = pd.DataFrame(columns=[
-        "Khách", "Thời gian", "Món", "Size", "Số lượng", "Doanh thu", "Chi phí", "Lợi nhuận"
-    ])
+    st.session_state.orders = orders
 
-st.title("INMINH CAFÉ - QUẢN LÍ DOANH THU")
+st.title("INMINH CAFÉ - QUẢN LÍ DOANH THU (LƯU EXCEL)")
 
-# --- Form nhập thông tin đơn hàng ---
 with st.form("order_form"):
     col1, col2 = st.columns(2)
     with col1:
@@ -74,19 +75,26 @@ with st.form("order_form"):
         }])
         st.session_state.orders = pd.concat([st.session_state.orders, new_order], ignore_index=True)
 
-        # Reset input
+        # Tự lưu ra Excel
+        st.session_state.orders.to_excel(excel_file, index=False)
+
         for key in ["ten_khach", "ngay_mua", "gio_mua", "loai_nuoc", "size", "so_luong"]:
             if key in st.session_state:
                 del st.session_state[key]
 
-        st.success("✅ Đã thêm đơn hàng mới!")
+        st.success("✅ Đã thêm và lưu vào Excel!")
         st.rerun()
 
-# --- Lịch sử đơn hàng ---
+# Lịch sử
 st.subheader("📦 Lịch sử đơn hàng")
 st.dataframe(st.session_state.orders, use_container_width=True)
 
-# --- Thống kê ---
+# Tải Excel
+st.subheader("⬇️ Tải đơn hàng Excel")
+with open(excel_file, "rb") as f:
+    st.download_button("📥 Tải file Excel", f, file_name="don_hang.xlsx")
+
+# Thống kê
 df = st.session_state.orders
 if not df.empty:
     st.subheader("📊 Thống kê")
@@ -102,9 +110,8 @@ if not df.empty:
     ax1.axis("equal")
     st.pyplot(fig1)
 
-# --- Xoá đơn hàng ---
+# Xoá đơn
 st.subheader("🗑 Xóa đơn hàng sai")
-
 if not df.empty:
     for idx, row in df.iterrows():
         col1, col2 = st.columns([6, 1])
@@ -114,5 +121,6 @@ if not df.empty:
             if st.button("🗑 Xóa", key=f"delete_{idx}"):
                 st.session_state.orders.drop(index=idx, inplace=True)
                 st.session_state.orders.reset_index(drop=True, inplace=True)
-                st.success("✅ Đã xóa đơn hàng.")
+                st.session_state.orders.to_excel(excel_file, index=False)
+                st.success("✅ Đã xóa và cập nhật Excel.")
                 st.rerun()
