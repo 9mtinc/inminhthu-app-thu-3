@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, time
 import matplotlib.pyplot as plt
-st.set_page_config(layout="wide")
 
+# Giao diện full màn hình
+st.set_page_config(layout="wide")
 
 # Bản đồ thứ tiếng Việt
 thu_map = {
@@ -16,6 +17,7 @@ thu_map = {
     6: "Chủ nhật"
 }
 
+# Menu đồ uống
 menu = [
     {"Loại nước": "Bạc xỉu", "Size": "500ml", "Giá bán": 17000, "Chi phí": 5177},
     {"Loại nước": "Cà phê muối", "Size": "500ml", "Giá bán": 16000, "Chi phí": 1722},
@@ -28,11 +30,15 @@ menu = [
 
 df_menu = pd.DataFrame(menu)
 
+# Lưu đơn hàng
 if "orders" not in st.session_state:
-    st.session_state.orders = pd.DataFrame(columns=["Khách", "Thời gian", "Món", "Size", "Số lượng", "Doanh thu", "Chi phí", "Lợi nhuận"])
+    st.session_state.orders = pd.DataFrame(columns=[
+        "Khách", "Thời gian", "Món", "Size", "Số lượng", "Doanh thu", "Chi phí", "Lợi nhuận"
+    ])
 
 st.title("INMINH CAFÉ - QUẢN LÍ DOANH THU")
 
+# --- Form nhập thông tin đơn hàng ---
 with st.form("order_form"):
     col1, col2 = st.columns(2)
     with col1:
@@ -68,7 +74,7 @@ with st.form("order_form"):
         }])
         st.session_state.orders = pd.concat([st.session_state.orders, new_order], ignore_index=True)
 
-        # Reset toàn bộ form
+        # Reset input
         for key in ["ten_khach", "ngay_mua", "gio_mua", "loai_nuoc", "size", "so_luong"]:
             if key in st.session_state:
                 del st.session_state[key]
@@ -76,11 +82,11 @@ with st.form("order_form"):
         st.success("✅ Đã thêm đơn hàng mới!")
         st.rerun()
 
-# Lịch sử đơn hàng
+# --- Lịch sử đơn hàng ---
 st.subheader("📦 Lịch sử đơn hàng")
 st.dataframe(st.session_state.orders, use_container_width=True)
 
-# Thống kê
+# --- Thống kê ---
 df = st.session_state.orders
 if not df.empty:
     st.subheader("📊 Thống kê")
@@ -88,19 +94,19 @@ if not df.empty:
     st.metric("Tổng lợi nhuận", f"{df['Lợi nhuận'].sum():,} VND")
     st.metric("Tổng số ly bán", int(df["Số lượng"].sum()))
 
-    # Biểu đồ
     st.bar_chart(df.groupby("Thời gian")["Doanh thu"].sum())
 
     pie = df.groupby("Món")["Số lượng"].sum()
     fig1, ax1 = plt.subplots()
     ax1.pie(pie, labels=pie.index, autopct='%1.1f%%', startangle=90)
-    ax1.axis('equal')
+    ax1.axis("equal")
     st.pyplot(fig1)
-    # --- XÓA ĐƠN HÀNG ---
+
+# --- Xoá đơn hàng ---
 st.subheader("🗑 Xóa đơn hàng sai")
 
-if not st.session_state.orders.empty:
-    for idx, row in st.session_state.orders.iterrows():
+if not df.empty:
+    for idx, row in df.iterrows():
         col1, col2 = st.columns([6, 1])
         with col1:
             st.write(f"{idx+1}. {row['Khách']} - {row['Món']} {row['Size']} ({row['Số lượng']} ly) - {row['Thời gian']}")
@@ -110,4 +116,3 @@ if not st.session_state.orders.empty:
                 st.session_state.orders.reset_index(drop=True, inplace=True)
                 st.success("✅ Đã xóa đơn hàng.")
                 st.rerun()
-
