@@ -28,7 +28,6 @@ menu = [
 
 df_menu = pd.DataFrame(menu)
 
-# Load file Excel nếu có
 excel_file = "don_hang.xlsx"
 if os.path.exists(excel_file):
     orders = pd.read_excel(excel_file)
@@ -38,7 +37,7 @@ else:
 if "orders" not in st.session_state:
     st.session_state.orders = orders
 
-st.title("INMINH CAFÉ - QUẢN LÍ DOANH THU (LƯU EXCEL)")
+st.title("INMINH CAFÉ ☕ - QUẢN LÍ DOANH THU (Excel Only)")
 
 with st.form("order_form"):
     col1, col2 = st.columns(2)
@@ -56,7 +55,7 @@ with st.form("order_form"):
     size = st.selectbox("Size", df_menu[df_menu["Loại nước"] == loai_nuoc]["Size"].unique(), key="size")
     so_luong = st.number_input("Số lượng", min_value=1, value=1, key="so_luong")
 
-    submit = st.form_submit_button("Thêm đơn hàng")
+    submit = st.form_submit_button("➕ Thêm đơn hàng")
     if submit and ten_khach:
         row = df_menu[(df_menu["Loại nước"] == loai_nuoc) & (df_menu["Size"] == size)].iloc[0]
         doanh_thu = row["Giá bán"] * so_luong
@@ -74,8 +73,6 @@ with st.form("order_form"):
             "Lợi nhuận": loi_nhuan
         }])
         st.session_state.orders = pd.concat([st.session_state.orders, new_order], ignore_index=True)
-
-        # Tự lưu ra Excel
         st.session_state.orders.to_excel(excel_file, index=False)
 
         for key in ["ten_khach", "ngay_mua", "gio_mua", "loai_nuoc", "size", "so_luong"]:
@@ -85,16 +82,19 @@ with st.form("order_form"):
         st.success("✅ Đã thêm và lưu vào Excel!")
         st.rerun()
 
-# Lịch sử
+# --- LỊCH SỬ ---
 st.subheader("📦 Lịch sử đơn hàng")
 st.dataframe(st.session_state.orders, use_container_width=True)
 
-# Tải Excel
+# --- TẢI EXCEL ---
 st.subheader("⬇️ Tải đơn hàng Excel")
-with open(excel_file, "rb") as f:
-    st.download_button("📥 Tải file Excel", f, file_name="don_hang.xlsx")
+if os.path.exists(excel_file):
+    with open(excel_file, "rb") as f:
+        st.download_button("📥 Tải file Excel", f, file_name="don_hang.xlsx")
+else:
+    st.info("📂 Chưa có đơn hàng nào được lưu để tải về.")
 
-# Thống kê
+# --- THỐNG KÊ ---
 df = st.session_state.orders
 if not df.empty:
     st.subheader("📊 Thống kê")
@@ -110,7 +110,7 @@ if not df.empty:
     ax1.axis("equal")
     st.pyplot(fig1)
 
-# Xoá đơn
+# --- XOÁ ---
 st.subheader("🗑 Xóa đơn hàng sai")
 if not df.empty:
     for idx, row in df.iterrows():
